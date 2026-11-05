@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Page not found</title>
+<script>
+// GitHub Pages matches project paths by exact case, so /larpercord/ never reaches larperCord.
+var projects = ["larperCord"];
+var match = location.pathname.match(/^\/([^\/]+)(\/.*)?$/);
+if (match) projects.forEach(function (name) {
+  if (match[1] !== name && match[1].toLowerCase() === name.toLowerCase())
+    location.replace("/" + name + (match[2] || "/") + location.search + location.hash);
+});
+</script>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-content: center; padding: 16px; box-sizing: border-box;
+         background: #0b0a10; color: #e9e6f2; font: 16px/1.5 system-ui, sans-serif; text-align: center; }
+  a { color: #d58bff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Page not found</h1>
+  <p>Looking for <a href="/larperCord/">larperCord</a>?</p>
+</main>
+</body>
+</html>
