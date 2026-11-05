@@ -4,27 +4,672 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Page not found</title>
+<meta name="theme-color" content="#06030d">
+<title>404 · page not found</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2306030d'/%3E%3Cpath fill='%23e24bff' fill-rule='evenodd' d='M9 1h4v8h2v3h-2v3H9v-3H1V9zm0 4L5 9h4z'/%3E%3C/svg%3E">
+<link rel="preload" href="/assets/departure-mono.woff2" as="font" type="font/woff2" crossorigin>
 <script>
-// GitHub Pages matches project paths by exact case, so /larpercord/ never reaches larperCord.
-var projects = ["larperCord"];
-var match = location.pathname.match(/^\/([^\/]+)(\/.*)?$/);
-if (match) projects.forEach(function (name) {
-  if (match[1] !== name && match[1].toLowerCase() === name.toLowerCase())
+// GitHub Pages matches project paths by exact case, so /LARPERCORD/ never reaches larperCord.
+const SITES = ["larperCord", "telinha"];
+let leaving = false;
+document.documentElement.className = "js";
+(() => {
+  const match = location.pathname.match(/^\/([^/]+)(\/.*)?$/);
+  if (!match) return;
+  let asked = match[1];
+  try { asked = decodeURIComponent(asked); } catch {}
+  const go = name => {
+    leaving = true;
     location.replace("/" + name + (match[2] || "/") + location.search + location.hash);
-});
+  };
+  const known = SITES.find(name => name.toLowerCase() === asked.toLowerCase());
+  if (known) {
+    if (known !== asked) go(known);
+    return;
+  }
+  // Sites not listed above: the API ignores case and answers with the real name.
+  fetch("https://api.github.com/repos/RshaCuDeVidro/" + encodeURIComponent(asked))
+    .then(r => (r.ok ? r.json() : null))
+    .then(repo => {
+      if (repo && repo.has_pages && repo.name !== asked && !/\.github\.io$/i.test(repo.name)) go(repo.name);
+    })
+    .catch(() => {});
+})();
 </script>
 <style>
-  :root { color-scheme: dark; }
-  body { margin: 0; min-height: 100vh; display: grid; place-content: center; padding: 16px; box-sizing: border-box;
-         background: #0b0a10; color: #e9e6f2; font: 16px/1.5 system-ui, sans-serif; text-align: center; }
-  a { color: #d58bff; }
+  @font-face { font-family: "Departure Mono"; src: url(/assets/departure-mono.woff2) format("woff2"); font-display: swap; }
+  :root {
+    color-scheme: dark;
+    --bg: #06030d; --panel: rgba(9, 5, 20, .95); --line: #3f2778;
+    --text: #efe9ff; --muted: #a99bd6; --hot: #e24bff; --fail: #ff5aa9;
+    --mono: "Departure Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 16.5px/1.4 var(--mono); }
+  a { color: var(--hot); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  #dump { position: fixed; top: 0; left: 0; display: block; }
+  .crt { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+    background:
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 42%, transparent 62%, rgba(3, 0, 10, .6) 100%); }
+  .crt::after { content: ""; position: absolute; left: 0; right: 0; top: -30%; height: 30%;
+    background: linear-gradient(transparent, rgba(170, 110, 255, .08), transparent);
+    animation: beam 7s linear infinite; will-change: transform; }
+  @keyframes beam { to { transform: translateY(calc(100vh + 100%)); } }
+
+  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 2; display: flex; justify-content: space-between; gap: 16px; white-space: nowrap;
+    padding: 12px clamp(14px, 3.5vw, 40px) 16px; font-size: 11px; letter-spacing: .08em; color: var(--muted);
+    background: linear-gradient(var(--bg) 62%, transparent); }
+  .bar i { display: inline-block; width: 7px; height: 7px; margin-right: 8px; background: var(--fail); animation: blink 1.1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .15; } }
+  #code { color: var(--hot); }
+  .jolt #code { text-shadow: -3px 0 #3f6bff, 3px 0 var(--fail); }
+
+  main { position: relative; z-index: 2; min-height: 100vh; min-height: 100dvh; display: flex; align-items: flex-end;
+    justify-content: space-between; gap: 32px; padding: 56px clamp(14px, 3.5vw, 40px) max(clamp(14px, 3.5vw, 40px), env(safe-area-inset-bottom)); }
+  .left { width: min(760px, 100%); min-width: 0; }
+  .jolt .left { transform: translateX(3px) skewX(-.6deg); }
+  .quake .left { animation: quake .1s steps(2) infinite; }
+  @keyframes quake { from { transform: translate(-7px, 4px) rotate(-.5deg); } to { transform: translate(7px, -4px) rotate(.5deg); } }
+
+  h1 { display: inline-block; margin: 0; padding: 7px 34px 5px 14px; background: var(--hot); color: #12041f;
+    font: 400 clamp(22px, 3.4vw, 33px)/1.1 var(--mono); text-transform: uppercase;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+  .big404 { display: none; }
+
+  .tty { background: var(--panel); border: 1px solid var(--line); box-shadow: 0 28px 90px rgba(70, 15, 160, .5); }
+  .ttybar { display: flex; justify-content: space-between; gap: 16px; padding: 7px 12px; border-bottom: 1px solid var(--line);
+    font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+  #where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #log { height: clamp(150px, 24vh, 264px); padding: 10px 12px; overflow-y: auto; overflow-wrap: anywhere;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  #log .ok { color: #c3b1ff; }
+  #log .wait { color: var(--muted); }
+  #log .fail { color: var(--fail); }
+  #log .big { color: var(--hot); }
+  #log .echo { color: var(--text); margin-top: 6px; }
+  #log .muted { color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; column-gap: 1.2ch; }
+  .row > :first-child { flex: 0 0 auto; min-width: 12ch; }
+  .row > :last-child { color: var(--muted); min-width: 0; }
+
+  #prompt { display: flex; align-items: center; gap: 1ch; padding: 8px 12px; border-top: 1px solid var(--line); }
+  #prompt:focus-within { border-top-color: var(--hot); }
+  #prompt label { flex: none; color: var(--hot); }
+  #cmd { flex: 1; min-width: 0; padding: 0; border: 0; outline: 0; background: none; color: var(--text); caret-color: var(--hot); font: inherit; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 12px; }
+  .chips button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); background: none; color: var(--text); font: inherit; cursor: pointer;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%); }
+  .chips button:hover { background: var(--hot); border-color: var(--hot); color: #12041f; }
+  .chips button:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
+
+  .report { display: none; flex: none; margin: 0; padding: 10px 12px; font-size: 11px; line-height: 1.6; letter-spacing: .06em; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); grid-template-columns: auto minmax(0, 24ch); gap: 0 18px; }
+  .report dt { color: #7f6fb3; }
+  .report dd { margin: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (min-width: 1100px) { .report { display: grid; } }
+  @media (max-width: 640px) { #log { height: clamp(150px, 27vh, 260px); font-size: 13.75px; } }
+  @media (max-width: 360px) { #code { display: none; } .chips { gap: 6px; } .chips button { padding: 0 10px; } }
+  @media (max-height: 520px) and (min-width: 641px) { .left { width: 56vw; } #log { height: clamp(96px, 28vh, 150px); } }
+
+  #panic { display: none; position: fixed; inset: 0; z-index: 6; place-content: center; padding: 16px; text-align: center; color: var(--fail); background: #000; }
+  #panic span { animation: blink 1s steps(2) infinite; }
+  .dead #panic { display: grid; }
+
+  html:not(.js) .big404 { display: block; margin: 0; font-size: min(38vw, 260px); line-height: 1; color: var(--hot); }
+  html:not(.js) main { display: block; }
+  html:not(.js) #prompt, html:not(.js) .chips, html:not(.js) .ttybar, html:not(.js) .report, html:not(.js) #dump { display: none; }
+  html:not(.js) #log { height: auto; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .crt::after, .bar i, #panic span { animation: none; }
+  }
 </style>
 </head>
 <body>
+<canvas id="dump" aria-hidden="true"></canvas>
+<div class="crt" aria-hidden="true"></div>
+<div id="panic" aria-hidden="true"><div>kernel panic: not syncing<span>_</span></div></div>
+
+<header class="bar">
+  <span><i></i>rshacudevidro.github.io</span>
+  <span id="code">ERR_PAGE_DUMPED</span>
+</header>
+
 <main>
-  <h1>Page not found</h1>
-  <p>Looking for <a href="/larperCord/">larperCord</a>?</p>
+  <div class="left">
+    <p class="big404" aria-hidden="true">404</p>
+    <h1 id="title"><span class="sr">404: </span><span id="headline">Page not found</span></h1>
+    <section class="tty" aria-label="Terminal">
+      <div class="ttybar"><span>TTY1</span><span id="where"></span></div>
+      <div id="log" role="log" aria-live="polite" tabindex="0"><div class="big">segmentation fault (page dumped)</div></div>
+      <form id="prompt" autocomplete="off">
+        <label for="cmd">guest@404:~$</label>
+        <input id="cmd" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send">
+      </form>
+      <div class="chips">
+        <button type="button" data-cmd="back" id="chip-back">← back</button>
+        <button type="button" data-cmd="ls" id="chip-ls">sites</button>
+        <button type="button" data-cmd="help" id="chip-help">help</button>
+      </div>
+    </section>
+  </div>
+  <dl class="report" aria-hidden="true">
+    <dt>SIGNAL</dt><dd>11 (SIGSEGV)</dd>
+    <dt>FAULT ADDR</dt><dd>0x00000404</dd>
+    <dt>STATUS</dt><dd>404</dd>
+    <dt>PATH</dt><dd id="r-path"></dd>
+    <dt>TIME</dt><dd id="r-time"></dd>
+  </dl>
 </main>
+
+<script>
+(() => {
+  if (leaving) return;
+  const $ = id => document.getElementById(id);
+  const pt = /^pt\b/i.test(navigator.language || "");
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const HOST = "rshacudevidro.github.io";
+  let path = location.pathname;
+  try { path = decodeURIComponent(path); } catch {}
+
+  const T = pt ? {
+    lang: "pt-BR", title: "404 · página não encontrada", headline: "Página não encontrada",
+    chips: ["← voltar", "sites", "ajuda"],
+    boot: [
+      ["[ ok ] conectado", "ok", 120], ["[ ok ] handshake tls", "ok", 130], ["[ .. ] GET " + path, "wait", 170],
+      ["[FAIL] 404: essa página não existe", "fail", 300], ["sinal 11 (SIGSEGV) em 0x00000404", "fail", 180],
+      ["falha de segmentação (página despejada)", "big", 200], ["digite help ou escolha abaixo.", "muted", 260],
+    ],
+    help: [["ls", "os sites que existem"], ["cd <site>", "ir para um deles"], ["back", "voltar de onde veio"], ["pwd", "onde você está"],
+      ["whoami", "quem você é"], ["clear", "limpar a tela"]],
+    more: "e mais alguns. fuça aí.", heading: "sites que existem:", none: "nenhum site encontrado.",
+    notFound: c => "comando não encontrado: " + c, noSite: s => "cd: site não encontrado: " + s, going: s => "indo para " + s + "…",
+    noHome: "cd: nada acima disso. tenta ls.", noBack: "sem histórico para voltar. tenta ls.", who: ["guest", "(ninguém importante. foi mal.)"],
+    sudo: "guest não está no arquivo sudoers. Este incidente será relatado.", vim: "boa sorte para sair.",
+    hack: ["[##        ] quebrando o firewall", "[#####     ] descobrindo a senha", "[##########] ACESSO LIBERADO", "a quê? isto é um 404."],
+    survived: "[ ok ] nada foi apagado. nunca esteve aqui.", calmRm: "rm: já não existe mesmo.",
+  } : {
+    lang: "en", title: "404 · page not found", headline: "Page not found",
+    chips: ["← back", "sites", "help"],
+    boot: [
+      ["[ ok ] connected", "ok", 120], ["[ ok ] tls handshake", "ok", 130], ["[ .. ] GET " + path, "wait", 170],
+      ["[FAIL] 404: no such page", "fail", 300], ["signal 11 (SIGSEGV) at 0x00000404", "fail", 180],
+      ["segmentation fault (page dumped)", "big", 200], ["type help, or pick one below.", "muted", 260],
+    ],
+    help: [["ls", "the sites that do exist"], ["cd <site>", "go to one of them"], ["back", "back where you came from"], ["pwd", "where you are"],
+      ["whoami", "who you are"], ["clear", "clean the screen"]],
+    more: "and a few others. poke around.", heading: "sites that do exist:", none: "no sites found.",
+    notFound: c => "command not found: " + c, noSite: s => "cd: no such site: " + s, going: s => "going to " + s + "…",
+    noHome: "cd: nothing above this. try ls.", noBack: "no history to go back to. try ls.", who: ["guest", "(nobody important. sorry.)"],
+    sudo: "guest is not in the sudoers file. This incident will be reported.", vim: "good luck getting out.",
+    hack: ["[##        ] breaching the firewall", "[#####     ] cracking the password", "[##########] ACCESS GRANTED", "to what? this is a 404."],
+    survived: "[ ok ] nothing was deleted. it was never here.", calmRm: "rm: it's already gone.",
+  };
+
+  document.documentElement.lang = T.lang;
+  document.title = T.title;
+  $("headline").textContent = T.headline;
+  ["back", "ls", "help"].forEach((id, i) => { $("chip-" + id).textContent = T.chips[i]; });
+  $("where").textContent = path;
+  $("r-path").textContent = path;
+  $("r-time").textContent = new Date().toISOString().slice(0, 19) + "Z";
+
+  /* The dump: a hexdump of the page that isn't there, with the 404 lit up inside it. */
+  const cv = $("dump");
+  const ctx = cv.getContext("2d", { alpha: false });
+  const BG = "#06030d", FONT = '11px "Departure Mono", ui-monospace, Menlo, Consolas, monospace';
+  const CW = 7, CH = 14, HEX = "0123456789abcdef";
+  const INK = [null, "#2e2057", "#382668", "#4e368c", "#7656d6"];
+  const RAMP = [[0, 255, 138, 246], [.34, 236, 66, 255], [.7, 150, 76, 255], [1, 92, 50, 244]];
+  let g = null;
+
+  const mulberry = seed => () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const hash = s => [...s].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261);
+
+  function memory(size, rand) {
+    const bytes = new Uint8Array(size), hot = new Uint8Array(size), enc = new TextEncoder();
+    const words = [path, HOST, "SIGSEGV", "page not found", "segmentation fault", "(page dumped)", "0xDEADBEEF"];
+    for (let i = 0; i < size;) {
+      const pick = rand();
+      if (pick < .16) {
+        for (const b of enc.encode(words[rand() * words.length | 0])) if (i < size) { bytes[i] = b; hot[i++] = 1; }
+      } else if (pick < .42) {
+        i += 4 + rand() * 36 | 0;
+      } else {
+        for (let k = 4 + rand() * 28 | 0; k > 0 && i < size; k--) bytes[i++] = rand() * 256 | 0;
+      }
+    }
+    return { bytes, hot };
+  }
+
+  function layout(cols, rows, rand) {
+    const perLine = Math.max(4, Math.floor((cols - 13) / 4.125));
+    const { bytes, hot } = memory(perLine * rows, rand);
+    const glyph = new Uint8Array(cols * rows).fill(32), kind = new Uint8Array(cols * rows);
+    for (let r = 0; r < rows; r++) {
+      let c = 0;
+      const put = (ch, k) => { if (c < cols) { glyph[r * cols + c] = ch.charCodeAt(0); kind[r * cols + c] = k; } c++; };
+      for (const ch of (0x404000 + r * perLine).toString(16).padStart(8, "0")) put(ch, 1);
+      c += 2;
+      for (let b = 0; b < perLine; b++) {
+        const i = r * perLine + b, h = bytes[i].toString(16).padStart(2, "0"), k = hot[i] ? 3 : 2;
+        put(h[0], k); put(h[1], k); c++;
+        if (b % 8 === 7) c++;
+      }
+      c++;
+      put("|", 1);
+      for (let b = 0; b < perLine; b++) {
+        const i = r * perLine + b, v = bytes[i];
+        put(v > 31 && v < 127 ? String.fromCharCode(v) : ".", hot[i] ? 4 : 3);
+      }
+      put("|", 1);
+    }
+    return { glyph, kind };
+  }
+
+  function digits(c) {
+    const poly = p => { c.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) c.lineTo(p[i], p[i + 1]); c.closePath(); };
+    const four = x => {
+      c.save(); c.translate(x, 0); c.beginPath();
+      poly([38, 0, 66, 0, 66, 56, 76, 56, 76, 76, 66, 76, 66, 100, 44, 100, 44, 76, 0, 76, 0, 56]);
+      poly([22, 56, 44, 24, 44, 56]);
+      c.fill("evenodd"); c.restore();
+    };
+    four(0); four(164);
+    c.save(); c.translate(84, 0); c.beginPath();
+    poly([14, 0, 58, 0, 72, 14, 72, 86, 58, 100, 14, 100, 0, 86, 0, 14]);
+    poly([28, 20, 44, 20, 50, 26, 50, 74, 44, 80, 28, 80, 22, 74, 22, 26]);
+    c.fill("evenodd");
+    c.beginPath(); poly([22, 58, 50, 26, 50, 42, 22, 74]); c.fill();
+    c.restore();
+  }
+
+  const ramp = t => {
+    let i = 0;
+    while (i < RAMP.length - 2 && t > RAMP[i + 1][0]) i++;
+    const a = RAMP[i], b = RAMP[i + 1], k = Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0])));
+    return [1, 2, 3].map(n => Math.round(a[n] + (b[n] - a[n]) * k));
+  };
+
+  function layer(w, h, dpr) {
+    const c = document.createElement("canvas");
+    c.width = Math.ceil(w * dpr); c.height = Math.ceil(h * dpr);
+    const x = c.getContext("2d");
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.font = FONT; x.textBaseline = "top";
+    return x;
+  }
+
+  function build() {
+    const W = innerWidth, H = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.font = FONT; ctx.textBaseline = "top";
+
+    const cols = Math.ceil(W / CW), rows = Math.ceil(H / CH), rand = mulberry(hash(path));
+    const { glyph, kind } = layout(cols, rows, rand);
+
+    const base = layer(W, H, dpr);
+    base.fillStyle = BG; base.fillRect(0, 0, W, H);
+    for (let r = 0, i = 0; r < rows; r++) for (let c = 0; c < cols; c++, i++) {
+      if (!kind[i]) continue;
+      base.fillStyle = INK[kind[i]];
+      base.fillText(String.fromCharCode(glyph[i]), c * CW, r * CH + 1);
+    }
+
+    // Fit the digits between the top bar and the label, overlapping the label a little.
+    // On short, wide screens there's no room above the terminal, so they go beside it.
+    const margin = Math.max(14, W * .035), top = 40;
+    const beside = H <= 520 && W > 640;
+    const left = beside ? $("title").parentElement.getBoundingClientRect().right + 8 : margin;
+    const labelTop = $("title").getBoundingClientRect().top;
+    const bottom = beside ? H - 14 : Math.max(top + H * .2, labelTop + 14);
+    // Cells aren't square anyway, so the digits may stretch: tall on phones, full-bleed on wide screens.
+    const availW = W - margin - left, availH = bottom - top;
+    const sy = Math.min(availH / 100, availW / 240 * 1.7), sx = Math.min(availW / 240, sy * 1.35);
+    const ox = left + (availW - 240 * sx) / 2, oy = top + (availH - 100 * sy) / 2;
+
+    const small = document.createElement("canvas");
+    small.width = cols; small.height = rows;
+    const sc = small.getContext("2d", { willReadFrequently: true });
+    sc.setTransform(sx / CW, 0, 0, sy / CH, ox / CW, oy / CH);
+    digits(sc);
+    const alpha = sc.getImageData(0, 0, cols, rows).data;
+
+    // Two rows of the digits are sliced and pushed sideways, as if the crash tore them.
+    const lit = new Uint8Array(cols * rows);
+    let x0 = cols, x1 = -1, y0 = rows, y1 = -1;
+    for (let r = 0; r < rows; r++) {
+      const v = (r * CH - oy) / (100 * sy);
+      const dx = v > .33 && v < .39 ? Math.round(sx * 1.6) : v > .67 && v < .71 ? -Math.round(sx * 1.1) : 0;
+      for (let c = 0; c < cols; c++) {
+        const s = c - dx;
+        if (s < 0 || s >= cols || alpha[(r * cols + s) * 4 + 3] < 120) continue;
+        lit[r * cols + c] = 1;
+        if (c < x0) x0 = c; if (c > x1) x1 = c; if (r < y0) y0 = r; if (r > y1) y1 = r;
+      }
+    }
+
+    const lw = (x1 - x0 + 1) * CW, lh = (y1 - y0 + 1) * CH;
+    const l = layer(lw, lh, dpr);
+    const paintLit = (i, c, r, ch) => {
+      const [a, b, d] = ramp((r - y0) / Math.max(1, y1 - y0));
+      l.clearRect((c - x0) * CW, (r - y0) * CH, CW, CH);
+      l.fillStyle = `rgb(${a},${b},${d})`;
+      l.fillRect((c - x0) * CW, (r - y0) * CH, CW, CH);
+      l.fillStyle = "rgba(12,3,28,.24)";
+      l.fillText(ch, (c - x0) * CW, (r - y0) * CH + 1);
+    };
+    for (let r = y0; r <= y1; r++) for (let c = x0; c <= x1; c++) {
+      const i = r * cols + c;
+      if (!lit[i]) continue;
+      const ch = glyph[i] === 32 ? HEX[rand() * 16 | 0] : String.fromCharCode(glyph[i]);
+      paintLit(i, c, r, ch);
+    }
+
+    const pad = 96, gw = (lw + pad * 2) / 4, gh = (lh + pad * 2) / 4;
+    const glow = document.createElement("canvas");
+    glow.width = gw; glow.height = gh;
+    const gc = glow.getContext("2d");
+    gc.filter = "blur(10px)";
+    gc.drawImage(l.canvas, pad / 4, pad / 4, lw / 4, lh / 4);
+    // Baked once: blending this over the whole screen every frame was most of the page's CPU.
+    const gx = x0 * CW - pad, gy = y0 * CH - pad;
+    const addGlow = (sx0, sy0, w, h) => {
+      base.globalCompositeOperation = "lighter";
+      base.globalAlpha = .62;
+      base.drawImage(glow, (sx0 - gx) / 4, (sy0 - gy) / 4, w / 4, h / 4, sx0, sy0, w, h);
+      base.globalCompositeOperation = "source-over";
+      base.globalAlpha = 1;
+    };
+    addGlow(gx, gy, gw * 4, gh * 4);
+
+    const tint = layer(lw, lh, dpr);
+    tint.drawImage(l.canvas, 0, 0, lw, lh);
+    tint.globalCompositeOperation = "source-in";
+    tint.fillStyle = "#3f6bff"; tint.fillRect(0, 0, lw, lh);
+
+    g = { W, H, dpr, cols, rows, glyph, kind, lit, base, paintLit, addGlow, litCanvas: l.canvas, tint: tint.canvas,
+      lx: x0 * CW, ly: y0 * CH, lw, lh };
+    if (calm) paint(performance.now());
+  }
+
+  /* One frame is a few image copies; only the cells that change are redrawn as text. */
+  const heat = new Map();
+  let pointer = null, lastInput = performance.now(), lastFrame = 0, revealAt = performance.now();
+  let nextGlitch = revealAt + 2200, glitchUntil = 0, jolted = false;
+  let meltAt = 0, drops = [], dead = false;
+
+  function poke() {
+    const i = Math.random() * g.glyph.length | 0, k = g.kind[i];
+    if (k !== 2 && !g.lit[i]) return;
+    const ch = HEX[Math.random() * 16 | 0], c = i % g.cols, r = i / g.cols | 0;
+    if (k) {
+      g.base.fillStyle = BG; g.base.fillRect(c * CW, r * CH, CW, CH);
+      g.base.fillStyle = INK[k]; g.base.fillText(ch, c * CW, r * CH + 1);
+      g.addGlow(c * CW, r * CH, CW, CH);
+    }
+    if (g.lit[i]) g.paintLit(i, c, r, ch);
+    if (Math.random() < .25) heat.set(i, .55);
+  }
+
+  function paint(now) {
+    if (!g) return;
+    const { W, H, dpr } = g;
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    if (dead) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); return; }
+    if (!calm) for (let n = 0; n < 22; n++) poke();
+
+    ctx.drawImage(g.base.canvas, 0, 0, W, H);
+    const rev = calm ? 1 : Math.max(0, Math.min(1, (now - revealAt) / 1100));
+    const c = g.litCanvas;
+    ctx.drawImage(c, 0, 0, c.width, c.height * rev, g.lx, g.ly, g.lw, g.lh * rev);
+    if (rev < 1) { ctx.fillStyle = "#fff"; ctx.fillRect(0, g.ly + g.lh * rev, W, 2); }
+    if (calm) return;
+
+    if (pointer && pointer.moved) {
+      pointer.moved = false;
+      const c0 = pointer.x / CW | 0, r0 = pointer.y / CH | 0;
+      for (let dr = -4; dr <= 4; dr++) for (let dc = -9; dc <= 9; dc++) {
+        const d = dc * dc / 81 + dr * dr / 16, col = c0 + dc, row = r0 + dr;
+        if (d > 1 || col < 0 || col >= g.cols || row < 0 || row >= g.rows || Math.random() < .35) continue;
+        const i = row * g.cols + col;
+        heat.set(i, Math.max(heat.get(i) || 0, 1 - d * .7));
+      }
+    }
+    ctx.font = FONT; ctx.textBaseline = "top";
+    for (const [i, v] of heat) {
+      ctx.globalAlpha = v;
+      ctx.fillStyle = v > .6 ? "#fff" : "#d9a6ff";
+      ctx.fillText(HEX[Math.random() * 16 | 0], (i % g.cols) * CW, (i / g.cols | 0) * CH + 1);
+      if (v <= .07) heat.delete(i); else heat.set(i, v - .07);
+    }
+    ctx.globalAlpha = 1;
+
+    if (now > nextGlitch) {
+      glitchUntil = now + 90 + Math.random() * 240;
+      nextGlitch = now + 2600 + Math.random() * 5200;
+    }
+    const glitching = now < glitchUntil;
+    if (glitching !== jolted) { document.body.classList.toggle("jolt", glitching); jolted = glitching; }
+    if (glitching) {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = .6;
+      ctx.drawImage(g.tint, g.lx - 8 - Math.random() * 10, g.ly, g.lw, g.lh);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+      for (let n = 0; n < 6; n++) {
+        const y = Math.random() * H, h = 6 + Math.random() * 46, dx = (Math.random() - .5) * 110;
+        ctx.drawImage(cv, 0, y * dpr, cv.width, h * dpr, dx, y, W, h);
+      }
+    }
+
+    if (meltAt) {
+      const p = Math.min(1, (now - meltAt) / 1800), sw = W / drops.length;
+      ctx.fillStyle = BG;
+      drops.forEach((drop, k) => {
+        const dy = Math.min(H - 1, p ** 2.2 * H * drop), x = k * sw;
+        ctx.drawImage(cv, x * dpr, 0, sw * dpr, (H - dy) * dpr, x, dy, sw, H - dy);
+        ctx.fillRect(x, 0, sw, dy);
+      });
+    }
+  }
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    // Full speed only while something is happening; a page nobody is touching barely ticks.
+    const quiet = now - lastInput;
+    const busy = meltAt || now < glitchUntil || now - revealAt < 1200 || quiet < 1200;
+    if (now - lastFrame < (busy ? 33 : quiet > 20000 ? 160 : 66)) return;
+    lastFrame = now;
+    paint(now);
+  }
+
+  addEventListener("pointermove", e => {
+    pointer = { x: e.clientX, y: e.clientY, moved: true };
+    lastInput = performance.now();
+  }, { passive: true });
+
+  let lastW = innerWidth, lastH = innerHeight, resizing = 0;
+  addEventListener("resize", () => {
+    // Phone browsers resize when the address bar slides; that isn't worth a rebuild.
+    if (innerWidth === lastW && Math.abs(innerHeight - lastH) < 120) return;
+    lastW = innerWidth; lastH = innerHeight;
+    clearTimeout(resizing);
+    resizing = setTimeout(build, 150);
+  });
+
+  const start = () => {
+    build();
+    revealAt = performance.now();
+    if (!calm) requestAnimationFrame(frame);
+  };
+  const fonts = document.fonts && document.fonts.load ? document.fonts.load(FONT) : Promise.resolve();
+  Promise.race([fonts, new Promise(r => setTimeout(r, 1200))]).catch(() => {}).then(start);
+
+  /* The terminal. Everything printed goes through textContent, so the URL can't inject anything. */
+  const log = $("log"), input = $("cmd"), PROMPT = "guest@404:~$ ";
+  const canHover = matchMedia("(hover: hover)").matches;
+  const wait = ms => new Promise(r => setTimeout(r, calm ? 0 : ms));
+  let run = 0, melting = false, past = [], pastAt = 0, siteList = null;
+
+  const add = el => {
+    log.append(el);
+    while (log.childElementCount > 200) log.firstChild.remove();
+    log.scrollTop = log.scrollHeight;
+    return el;
+  };
+  const line = (text, cls) => {
+    const d = document.createElement("div");
+    if (cls) d.className = cls;
+    d.textContent = text;
+    return add(d);
+  };
+  const row = (left, right) => {
+    const d = document.createElement("div"), b = document.createElement("span");
+    d.className = "row";
+    b.textContent = right;
+    d.append(left, b);
+    return add(d);
+  };
+  const span = text => { const s = document.createElement("span"); s.textContent = text; return s; };
+
+  const sites = () => siteList || (siteList =
+    fetch("https://api.github.com/users/RshaCuDeVidro/repos?per_page=100&sort=pushed")
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(list => list.filter(r => r.has_pages && !r.fork && !/\.github\.io$/i.test(r.name)))
+      .then(list => list.map(r => ({ name: r.name, description: r.description || "" })))
+      .catch(() => SITES.map(name => ({ name, description: "" }))));
+
+  const commands = {
+    help() {
+      T.help.forEach(([a, b]) => row(span(a), b));
+      line(T.more, "muted");
+    },
+    async ls() {
+      const list = await sites();
+      line(list.length ? T.heading : T.none, "muted");
+      list.forEach(s => {
+        const a = document.createElement("a");
+        a.href = "/" + encodeURIComponent(s.name) + "/";
+        a.textContent = s.name + "/";
+        row(a, s.description);
+      });
+    },
+    async cd(args) {
+      const want = (args[0] || "").replace(/^\/+|\/+$/g, "");
+      if (!want || want === "~" || want === ".." || want === ".") return line(T.noHome, "muted");
+      const hit = (await sites()).find(s => s.name.toLowerCase() === want.toLowerCase());
+      if (!hit) return line(T.noSite(want.slice(0, 60)), "fail");
+      line(T.going(hit.name), "ok");
+      location.href = "/" + encodeURIComponent(hit.name) + "/";
+    },
+    back() {
+      if (history.length > 1) history.back();
+      else line(T.noBack, "muted");
+    },
+    pwd() { line(path); },
+    whoami() { line(T.who[0]); line(T.who[1], "muted"); },
+    clear() { log.textContent = ""; },
+    echo(args) { line(args.join(" ")); },
+    sudo() { line(T.sudo, "fail"); },
+    vim() { line(T.vim, "muted"); },
+    async hack() {
+      for (const [i, text] of T.hack.entries()) {
+        await wait(i ? 420 : 120);
+        line(text, i === T.hack.length - 1 ? "muted" : "ok");
+      }
+    },
+  };
+  commands.exit = commands.back;
+  commands.voltar = commands.back;
+  commands.ajuda = commands.help;
+
+  async function boot(first) {
+    const me = ++run;
+    log.textContent = "";
+    if (first) line(first, "ok");
+    for (const [text, cls, ms] of T.boot) {
+      await wait(ms);
+      if (me !== run) return;
+      line(text, cls);
+    }
+    if (canHover && document.activeElement === document.body) input.focus({ preventScroll: true });
+  }
+
+  async function meltdown() {
+    if (calm) return line(T.calmRm, "muted");
+    melting = true;
+    input.disabled = true;
+    log.setAttribute("aria-live", "off");
+    document.body.classList.add("quake");
+    meltAt = performance.now();
+    drops = Array.from({ length: 34 }, () => .35 + Math.random());
+    const victims = ["/boot/vmlinuz", "/etc/passwd", "/usr/lib/libhope.so", "/bin/sh", "/var/log/regrets.log", "/home/guest/.ssh/id_rsa", "/sys/kernel/ego", "/dev/null"];
+    const flood = setInterval(() => line("rm: removing '" + victims[Math.random() * victims.length | 0] + "'", "fail"), 45);
+    await wait(1800);
+    clearInterval(flood);
+    document.body.classList.remove("quake");
+    document.body.classList.add("dead");
+    dead = true;
+    await wait(1100);
+    dead = false; meltAt = 0; melting = false;
+    document.body.classList.remove("dead");
+    revealAt = performance.now();
+    input.disabled = false;
+    log.setAttribute("aria-live", "polite");
+    await boot(T.survived);
+    input.focus({ preventScroll: true });
+  }
+
+  async function exec(raw) {
+    if (melting) return;
+    run++;
+    const text = raw.trim();
+    line(PROMPT + text.slice(0, 200), "echo");
+    if (!text) return;
+    if (/^(sudo\s+)?rm\s+-(rf|fr)\s+(\/\*?|~|\.)$/i.test(text)) return meltdown();
+    const [name, ...args] = text.split(/\s+/);
+    const key = name.toLowerCase();
+    if (Object.hasOwn(commands, key)) await commands[key](args);
+    else line(T.notFound(name.slice(0, 60)), "fail");
+  }
+
+  $("prompt").addEventListener("submit", e => {
+    e.preventDefault();
+    const text = input.value;
+    input.value = "";
+    if (text.trim()) { past.push(text); pastAt = past.length; }
+    exec(text);
+  });
+  input.addEventListener("keydown", e => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    pastAt = Math.max(0, Math.min(past.length, pastAt + (e.key === "ArrowUp" ? -1 : 1)));
+    input.value = past[pastAt] || "";
+  });
+  document.querySelectorAll(".chips button").forEach(b => b.addEventListener("click", () => exec(b.dataset.cmd)));
+  addEventListener("keydown", e => {
+    lastInput = performance.now();
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && document.activeElement !== input) input.focus({ preventScroll: true });
+  });
+  log.parentElement.addEventListener("click", e => {
+    if (canHover && !e.target.closest("a,button") && !String(getSelection())) input.focus({ preventScroll: true });
+  });
+
+  boot();
+})();
+</script>
 </body>
 </html>
